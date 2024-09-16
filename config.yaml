@@ -1,0 +1,44 @@
+debug: false # gin release模式与debug模式切换
+port: 8880
+limit: 10
+language: zh
+cors:
+  allowOrigins:
+    - http://127.0.0.1:8880
+  allowMethods: POST,GET,OPTIONS,DELETE,PUT
+  allowHeaders: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id
+  exposeHeaders: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At
+  allowCredentials: "true"
+  maxAge: 43200
+jwt:
+  signingKey: qmPlus
+  expiresTime: 1
+  bufferTime: 1
+  issuer: zhuchangwen
+redis:
+  instances:
+      - name: service
+        addr: 127.0.0.1
+        port: 6379
+        password: ""
+        dbs: [2]
+#    - name: default
+#      addr: ziqi_redis.local
+#      port: 6389
+#      password: "AVNS_5OKguH8NUEBSc2LFoQl"
+#      dbs: [6,7,8,9,10,11,12,13,14,15]
+#    - name: service
+#      addr: 192.168.104.10
+#      port: 6379
+#      password: "20A3NBVJnWZtNzxumYOq"
+#      dbs: [2]
+zap:
+  director: log
+  level: info
+  maxAge: 1
+  format: console
+  stackTraceKey: console
+  encodeLevel: LowercaseLevelEncoder
+  prefix:
+  logInConsole: true
+  showLine: true
