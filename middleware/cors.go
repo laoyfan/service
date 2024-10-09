@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"net/http"
-	"service/internal/config"
+	"service/config"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,24 +10,27 @@ import (
 // Cors 中间件处理跨域请求
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 设置跨域响应头
+		setHeaders(c)
+
 		// 调试模式下放行所有请求
-		if config.AppConfig.Debug {
-			setHeaders(c)
+		if config.AppConfig.Debug == "debug" {
 			c.Next()
 			return
 		}
 
 		// 校验跨域请求
 		if !allowOrigins(c) {
-			c.AbortWithStatus(http.StatusForbidden)
+			c.JSON(http.StatusForbidden, gin.H{
+				"code": http.StatusForbidden,
+				"msg":  "校验跨域失败",
+			})
+			c.Abort()
 			return
 		}
 
-		// 设置跨域响应头
-		setHeaders(c)
-
 		// OPTIONS 方法直接返回
-		if c.Request.Method == "OPTIONS" {
+		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}

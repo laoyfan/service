@@ -1,43 +1,59 @@
 package logger
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"path"
+	"service/config"
+	"service/util"
+	"time"
+
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"path"
-	"service/internal/config"
-	"service/util"
-	"sync"
-	"time"
 )
 
-var (
-	logger *zap.Logger
-	once   sync.Once
-)
+var logger *zap.Logger
 
-func init() {
-	once.Do(func() {
-		logger = NewLogger()
+func InitLogger() error {
+	var err error
+	logger, err = NewLogger()
+	if err == nil {
 		zap.ReplaceGlobals(logger)
-	})
+	}
+	return err
 }
 
-func Info(msg string, fields ...zap.Field) {
-	logger.WithOptions(zap.AddCallerSkip(1)).Info(msg, fields...)
+func logWithTraceID(ctx context.Context, level string, msg string, fields ...zap.Field) {
+	traceID, ok := ctx.Value("TraceID").(string)
+	if ok {
+		msg = fmt.Sprintf("TranceID:%s,%s", traceID, msg)
+	}
+
+	switch level {
+	case "info":
+		logger.WithOptions(zap.AddCallerSkip(2)).Info(msg, fields...)
+	case "error":
+		logger.WithOptions(zap.AddCallerSkip(2)).Error(msg, fields...)
+	case "fatal":
+		logger.WithOptions(zap.AddCallerSkip(2)).Fatal(msg, fields...)
+	}
 }
 
-func Error(msg string, fields ...zap.Field) {
-	logger.WithOptions(zap.AddCallerSkip(1)).Error(msg, fields...)
+func Info(ctx context.Context, msg string, fields ...zap.Field) {
+	logWithTraceID(ctx, "info", msg, fields...)
 }
 
-func Fatal(msg string, fields ...zap.Field) {
-	logger.WithOptions(zap.AddCallerSkip(1)).Fatal(msg, fields...)
+func Error(ctx context.Context, msg string, fields ...zap.Field) {
+	logWithTraceID(ctx, "error", msg, fields...)
 }
 
-func NewLogger() *zap.Logger {
+func Fatal(ctx context.Context, msg string, fields ...zap.Field) {
+	logWithTraceID(ctx, "fatal", msg, fields...)
+}
+
+func NewLogger() (*zap.Logger, error) {
 	director := config.AppConfig.Zap.Director
 	level := config.AppConfig.Zap.Level
 	maxAge := config.AppConfig.Zap.MaxAge
@@ -52,7 +68,7 @@ func NewLogger() *zap.Logger {
 		fmt.Println("创建日志文件夹", director)
 		err := os.Mkdir(director, os.ModePerm)
 		if err != nil {
-			fmt.Println("创建日志文件夹失败", err)
+			return nil, fmt.Errorf("创建日志文件夹失败: %w", err)
 		}
 	}
 
@@ -72,8 +88,7 @@ func NewLogger() *zap.Logger {
 		)
 
 		if err != nil {
-			fmt.Printf("Get Write Syncer Failed err:%v", err.Error())
-			continue
+			return nil, fmt.Errorf("写入同步器失败: %w", err)
 		}
 
 		if logInConsole {
@@ -109,7 +124,7 @@ func NewLogger() *zap.Logger {
 	if showLine {
 		log = log.WithOptions(zap.AddCaller())
 	}
-	return log
+	return log, nil
 }
 
 // 获取配置对应level

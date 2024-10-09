@@ -3,8 +3,9 @@ package config
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/viper"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 // Cors 跨域配置
@@ -38,12 +39,11 @@ type Zap struct {
 }
 
 type Config struct {
-	Debug    bool
-	Port     int
-	Language string `yaml:"language"` // 语言
-	Limit    float64
-	Cors     Cors
-	Redis    struct {
+	Debug string
+	Port  int
+	Limit float64
+	Cors  Cors
+	Redis struct {
 		Instances []RedisInstanceConfig
 	}
 	Zap Zap
@@ -54,27 +54,26 @@ var (
 	port      int
 )
 
-func init() {
+func InitConfig() error {
 	// 设置命令行参数
-	flag.IntVar(&port, "port", 0, "Port number")
+	flag.IntVar(&port, "port", 0, "指定端口号")
 	flag.Parse()
-	println(port)
 
+	// 读取配置文件
 	viper.SetConfigFile("./config.yaml")
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file%v", err)
-		//logger.Fatal("Error reading config file", zap.Error(err))
+		return fmt.Errorf("配置文件读取错误: %w", err)
 	}
 
+	// 配置转结构体
 	if err := viper.Unmarshal(&AppConfig); err != nil {
-		fmt.Printf("Unable to decode into struct%v", err)
-		//logger.Fatal("Unable to decode into struct", zap.Error(err))
+		return fmt.Errorf("配置解码失败: %w", err)
 	}
 
 	// 如果命令行参数中有指定端口，则更新配置文件中的端口
 	if port != 0 {
 		AppConfig.Port = port
-		fmt.Printf("使用命令行端口:%v", port)
-		//logger.Info("使用命令行端口:", zap.Int("port", port))
+		fmt.Println(fmt.Sprintf("使用命令行端口:%v", port))
 	}
+	return nil
 }

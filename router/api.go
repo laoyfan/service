@@ -1,18 +1,25 @@
 package router
 
 import (
+	"service/controller"
+	"service/middleware"
+	"service/service"
+
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"service/internal/logger"
 )
 
 // Api api
 func Api(r *gin.Engine) {
 
 	api := r.Group("/api")
-	api.POST("/login", func(context *gin.Context) {
-		logger.Info("测试")
-		context.String(http.StatusOK, "hello World!")
-	})
+
+	// 实例化控制器
+	indexController := controller.NewIndexController(service.NewIndexService())
+
+	cpc := api.Group("/cpc", middleware.Auth(), middleware.Trace())
+	{
+		cpc.GET("/getInitDeviceInfo", indexController.GetDeviceInfo)
+		cpc.POST("/getCpcTaskEnvV2", indexController.GetCpcTaskEnv)
+	}
 
 }

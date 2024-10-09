@@ -4,8 +4,11 @@ import (
 	"errors"
 	"net/http"
 	"service/constant"
-	"service/internal/translator"
+	"service/logger"
+	"service/translator"
 	"strings"
+
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -25,7 +28,9 @@ type Controller struct{}
 // Result 基础封装
 func (c *Controller) Result(r *gin.Context, code int, msg string, data interface{}) {
 	r.JSON(http.StatusOK, Response{
-		code, msg, data,
+		Code: code,
+		Msg:  msg,
+		Data: data,
 	})
 }
 
@@ -35,8 +40,8 @@ func (c *Controller) Success(r *gin.Context, data interface{}) {
 }
 
 // Error 失败响应
-func (c *Controller) Error(r *gin.Context, data interface{}) {
-	c.Result(r, constant.ERROR, "请求失败", data)
+func (c *Controller) Error(r *gin.Context, msg string, data interface{}) {
+	c.Result(r, constant.ERROR, msg, data)
 }
 
 // Valid 参数校验
@@ -44,7 +49,17 @@ func (c *Controller) Valid(r *gin.Context, valid interface{}) error {
 	if err := r.ShouldBind(valid); err != nil {
 		var errs validator.ValidationErrors
 		if errors.As(err, &errs) {
+			logger.Error(r.Request.Context(), "参数检验失败",
+				zap.String("url", r.Request.URL.Path),
+				zap.Any("validationErrors", errs.Translate(translator.Trans)),
+			)
 			c.Result(r, constant.VALID, "请求参数校验失败", c.removeTopStruct(errs.Translate(translator.Trans)))
+		} else {
+			logger.Error(r.Request.Context(), "请求解析失败",
+				zap.String("url", r.Request.URL.Path),
+				zap.Any("error", err),
+			)
+			c.Result(r, http.StatusBadRequest, err.Error(), nil)
 		}
 		return err
 	}

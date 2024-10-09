@@ -7,7 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"service/constant"
-	"service/internal/logger"
+	"service/logger"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +33,8 @@ func Error() gin.HandlerFunc {
 
 				// 处理断开连接情况
 				if brokenPipe {
-					logger.Error("请求连接断开",
+					logger.Error(c.Request.Context(),
+						"请求连接断开",
 						zap.String("url", c.Request.URL.Path),
 						zap.Any("error", err),
 						zap.String("request", string(httpRequest)),
@@ -41,24 +42,23 @@ func Error() gin.HandlerFunc {
 					c.JSON(http.StatusOK, gin.H{
 						"code": constant.ERROR,
 						"msg":  "异常，请稍后重试",
-						"data": nil,
 					})
 					c.Abort()
 					return
 				}
 
 				// 记录异常日志和堆栈信息
-				logger.Error("捕获到的错误",
+				logger.Error(c.Request.Context(),
+					"异常捕获",
 					zap.Any("error", err),
-					zap.String("request", string(httpRequest)),
-					zap.String("stack", string(debug.Stack())),
+					zap.String("request", strings.ReplaceAll(string(httpRequest), "\r\n", " ")),
+					zap.Strings("stack", formatStackTrace()),
 				)
 
 				// 返回服务器内部错误响应
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 					"code": constant.ERROR,
 					"msg":  "服务器开小差，请稍后重试",
-					"data": nil,
 				})
 				c.Abort()
 			}
@@ -67,4 +67,20 @@ func Error() gin.HandlerFunc {
 		// 继续处理请求
 		c.Next()
 	}
+}
+
+func formatStackTrace() []string {
+	stack := string(debug.Stack())
+	stackLines := strings.Split(stack, "\n")
+	formattedStack := make([]string, 0, len(stackLines))
+	for _, line := range stackLines {
+		if strings.Contains(line, "goroutine") {
+			continue // 跳过 goroutine 信息
+		}
+		trimmedLine := strings.TrimSpace(line)
+		if len(trimmedLine) > 0 && strings.Contains(trimmedLine, "cpc-service-go") {
+			formattedStack = append(formattedStack, trimmedLine)
+		}
+	}
+	return formattedStack
 }
