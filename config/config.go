@@ -3,8 +3,6 @@ package config
 import (
 	"flag"
 	"fmt"
-	"time"
-
 	"github.com/spf13/viper"
 )
 
@@ -29,7 +27,9 @@ type RedisInstanceConfig struct {
 type Zap struct {
 	Director      string
 	Level         string
-	MaxAge        time.Duration
+	MaxAge        int
+	MaxSize       int
+	MaxBackups    int
 	Format        string
 	StackTraceKey string
 	EncodeLevel   string

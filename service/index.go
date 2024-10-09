@@ -55,20 +55,20 @@ func (s *IndexService) GetRedisData(ctx context.Context, id string) model.RedisD
 	if err != nil {
 		errMsg := "redis client error"
 		logger.Error(ctx, errMsg, zap.Error(err))
-		return model.RedisData{}
+		return model.RedisData{Code: 500}
 	}
 	result, err := client.HGet(ctx, constant.RedisHash, id).Result()
 	if err != nil {
 		errMsg := "redis get error"
 		logger.Error(ctx, errMsg, zap.Error(err))
-		return model.RedisData{}
+		return model.RedisData{Code: 500}
 	}
 	var redisData model.RedisData
 	err = json.Unmarshal([]byte(result), &redisData)
 	if err != nil {
 		errMsg := "json error"
 		logger.Error(ctx, errMsg, zap.Error(err))
-		return model.RedisData{}
+		return model.RedisData{Code: 500}
 	}
 	return redisData
 }

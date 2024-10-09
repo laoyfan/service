@@ -1,4 +1,4 @@
-debug: debug # gin release模式与debug模式切换
+debug: release # gin release模式与debug模式切换
 port: 8080
 limit: 10
 cors:
@@ -19,7 +19,9 @@ redis:
 zap:
   director: log
   level: info
-  maxAge: 1
+  maxAge: 3
+  maxSize: 100
+  maxBackups: 3
   format: console
   stackTraceKey: console
   encodeLevel: LowercaseLevelEncoder

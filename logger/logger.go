@@ -9,7 +9,8 @@ import (
 	"service/util"
 	"time"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/natefinch/lumberjack"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -57,6 +58,8 @@ func NewLogger() (*zap.Logger, error) {
 	director := config.AppConfig.Zap.Director
 	level := config.AppConfig.Zap.Level
 	maxAge := config.AppConfig.Zap.MaxAge
+	maxSize := config.AppConfig.Zap.MaxSize       // 每个日志文件的最大大小（MB）
+	maxBackups := config.AppConfig.Zap.MaxBackups // 保留的最大备份数量
 	format := config.AppConfig.Zap.Format
 	stackTraceKey := config.AppConfig.Zap.StackTraceKey
 	encodeLevel := config.AppConfig.Zap.EncodeLevel
@@ -80,21 +83,19 @@ func NewLogger() (*zap.Logger, error) {
 			eConfig zapcore.EncoderConfig
 		)
 
-		fileWriter, err := rotatelogs.New(
-			path.Join(director, "%Y-%m-%d", zLevel.String()+".log"),
-			rotatelogs.WithClock(rotatelogs.Local),
-			rotatelogs.WithMaxAge(maxAge*24*time.Hour),
-			rotatelogs.WithRotationTime(24*time.Hour),
-		)
-
-		if err != nil {
-			return nil, fmt.Errorf("写入同步器失败: %w", err)
+		// 使用 Lumberjack 进行日志轮转
+		lumberjackWriter := &lumberjack.Logger{
+			Filename:   path.Join(director, zLevel.String()+".log"),
+			MaxSize:    maxSize,    // MB
+			MaxBackups: maxBackups, // 保留的最大备份数量
+			MaxAge:     maxAge,     // 天
+			Compress:   true,       // 是否压缩备份
 		}
 
 		if logInConsole {
-			writer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(fileWriter))
+			writer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberjackWriter))
 		} else {
-			writer = zapcore.AddSync(fileWriter)
+			writer = zapcore.AddSync(lumberjackWriter)
 		}
 
 		eConfig = zapcore.EncoderConfig{
