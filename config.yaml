@@ -1,9 +1,9 @@
 debug: debug # gin release模式与debug模式切换
-port: 8880
+port: 8080
 limit: 10
 cors:
   allowOrigins:
-    - http://127.0.0.1:8880
+    - http://127.0.0.1:8080
   allowMethods: POST,GET,OPTIONS,DELETE,PUT
   allowHeaders: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id
   exposeHeaders: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At
@@ -12,26 +12,10 @@ cors:
 redis:
   instances:
     - name: default
-#      addr: ziqi_redis.local
-#      port: 6389
-#      password: "AVNS_5OKguH8NUEBSc2LFoQl"
       addr: 127.0.0.1
       port: 6379
       password: ""
-      dbs: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    - name: service
-      addr: 127.0.0.1
-      port: 6379
-      password: ""
-      dbs: [2]
-    - name: service1
-#      addr: 192.168.104.10
-#      port: 6379
-#      password: "20A3NBVJnWZtNzxumYOq"
-      addr: 127.0.0.1
-      port: 6379
-      password: ""
-      dbs: [2, 3]
+      dbs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 zap:
   director: log
   level: info

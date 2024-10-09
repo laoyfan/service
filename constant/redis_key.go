@@ -1,5 +1,5 @@
 package constant
 
 var (
-	DeviceHash = "base_device_hash"
+	RedisHash = "redis_hash"
 )

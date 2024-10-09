@@ -1,8 +1,7 @@
 package controller
 
 import (
-	"service/logger"
-	"service/request"
+	"service/model"
 	"service/service"
 
 	"github.com/gin-gonic/gin"
@@ -19,31 +18,21 @@ func NewIndexController(service *service.IndexService) *IndexController {
 	}
 }
 
-func (c *IndexController) GetDeviceInfo(ctx *gin.Context) {
-	var req request.GetDeviceInfoReq
+func (c *IndexController) SaveRedisData(ctx *gin.Context) {
+	var req model.RedisData
 	if err := c.Valid(ctx, &req); err != nil {
 		return
 	}
-	device, code := c.service.GetDeviceInfo(ctx, req)
-	c.Success(ctx, map[string]interface{}{
-		"code": code,
-		"data": device,
-	})
+	result := c.service.SaveRedisData(ctx, req)
+	c.Success(ctx, result)
 }
 
-func (c *IndexController) GetCpcTaskEnv(ctx *gin.Context) {
-	//var req request.GetTaskEnvReq
-	//if err := c.Valid(r, &req); err != nil {
-	//	return
-	//}
-	var req request.GetDeviceInfoReq
+func (c *IndexController) GetRedisData(ctx *gin.Context) {
+	var req model.GetRedisData
 	if err := c.Valid(ctx, &req); err != nil {
 		return
 	}
-	logger.Info(ctx, "测试")
-	c.service.GetDeviceInfo(ctx, req)
+	result := c.service.GetRedisData(ctx, req.Id)
 
-	c.Success(ctx, map[string]interface{}{
-		"test": 1,
-	})
+	c.Success(ctx, result)
 }

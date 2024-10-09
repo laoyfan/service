@@ -11,15 +11,13 @@ import (
 // Api api
 func Api(r *gin.Engine) {
 
-	api := r.Group("/api")
+	api := r.Group("/api", middleware.Auth(), middleware.Trace())
 
 	// 实例化控制器
 	indexController := controller.NewIndexController(service.NewIndexService())
-
-	cpc := api.Group("/cpc", middleware.Auth(), middleware.Trace())
 	{
-		cpc.GET("/getInitDeviceInfo", indexController.GetDeviceInfo)
-		cpc.POST("/getCpcTaskEnvV2", indexController.GetCpcTaskEnv)
+		api.POST("/saveRedisData", indexController.SaveRedisData)
+		api.GET("/getRedisData", indexController.GetRedisData)
 	}
 
 }
