@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+
 	"github.com/spf13/viper"
 )
 
@@ -11,46 +12,48 @@ type Cors struct {
 	AllowOrigins     []string `yaml:"allowOrigins"`     // 允许跨域origin
 	AllowMethods     string   `yaml:"allowMethods"`     // 方法
 	AllowHeaders     string   `yaml:"allowHeaders"`     // 请求头
-	ExposeHeaders    string   `yaml:"exposeHeaders"`    //
-	AllowCredentials string   `yaml:"allowCredentials"` //
-	MaxAge           string   `yaml:"maxAge"`           //
+	ExposeHeaders    string   `yaml:"exposeHeaders"`    // 响应头
+	AllowCredentials string   `yaml:"allowCredentials"` // 是否允许发送cookie
+	MaxAge           string   `yaml:"maxAge"`           // 预检间隔
 }
 
 type RedisInstanceConfig struct {
-	Name     string
-	Addr     string
-	Port     int
-	Password string
-	DBs      []int
+	Name     string `yaml:"name"`     // 实例名称
+	Addr     string `yaml:"addr"`     // 地址
+	Port     int    `yaml:"port"`     // 端口
+	Password string `yaml:"password"` // 密码
+	DBs      []int  `yaml:"dbs"`      // 数据库
 }
 
 type Zap struct {
-	Director      string
-	Level         string
-	MaxAge        int
-	MaxSize       int
-	MaxBackups    int
-	Format        string
-	StackTraceKey string
-	EncodeLevel   string
-	Prefix        string
-	LoginConsole  bool
-	ShowLine      bool
+	Director      string // 日志文件夹
+	Level         string // 日志级别
+	MaxAge        int    // 日志保存天数
+	MaxSize       int    // 日志大小(MB)
+	MaxBackups    int    // 日志备份数量
+	Format        string // 输出日志格式
+	StackTraceKey string // 错误堆栈key
+	EncodeLevel   string // 编码级别
+	Prefix        string // 日志前缀
+	LoginConsole  bool   // 是否输出日志到控制台
+	ShowLine      bool   // 是否显示行号
 }
 
 type Config struct {
-	Debug string
-	Port  int
-	Limit float64
-	Cors  Cors
-	Redis struct {
-		Instances []RedisInstanceConfig
+	Debug string   // 调试模式
+	Port  int      // 端口
+	Limit float64  // 限流
+	Cors  Cors     // 跨域
+	Redis struct { // Redis配置
+		Instances []RedisInstanceConfig // Redis实例配置
 	}
-	Zap Zap
+	Zap Zap // 日志
 }
 
+const configFilePath = "./config.yaml"
+
 var (
-	AppConfig Config
+	AppConfig = &Config{}
 	port      int
 )
 
@@ -60,7 +63,7 @@ func InitConfig() error {
 	flag.Parse()
 
 	// 读取配置文件
-	viper.SetConfigFile("./config.yaml")
+	viper.SetConfigFile(configFilePath)
 	if err := viper.ReadInConfig(); err != nil {
 		return fmt.Errorf("配置文件读取错误: %w", err)
 	}
@@ -73,7 +76,7 @@ func InitConfig() error {
 	// 如果命令行参数中有指定端口，则更新配置文件中的端口
 	if port != 0 {
 		AppConfig.Port = port
-		fmt.Println(fmt.Sprintf("使用命令行端口:%v", port))
+		fmt.Println(fmt.Sprintf("使用命令行设置的端口:%v", port))
 	}
 	return nil
 }

@@ -27,18 +27,14 @@ func InitLogger() error {
 }
 
 func logWithTraceID(ctx context.Context, level string, msg string, fields ...zap.Field) {
-	traceID, ok := ctx.Value("TraceID").(string)
-	if ok {
-		msg = fmt.Sprintf("TranceID:%s,%s", traceID, msg)
-	}
-
+	traceID, _ := ctx.Value("TraceID").(string)
 	switch level {
 	case "info":
-		logger.WithOptions(zap.AddCallerSkip(2)).Info(msg, fields...)
+		logger.With(zap.Any("trace_id", traceID)).WithOptions(zap.AddCallerSkip(2)).Info(msg, fields...)
 	case "error":
-		logger.WithOptions(zap.AddCallerSkip(2)).Error(msg, fields...)
+		logger.With(zap.Any("trace_id", traceID)).WithOptions(zap.AddCallerSkip(2)).Error(msg, fields...)
 	case "fatal":
-		logger.WithOptions(zap.AddCallerSkip(2)).Fatal(msg, fields...)
+		logger.With(zap.Any("trace_id", traceID)).WithOptions(zap.AddCallerSkip(2)).Fatal(msg, fields...)
 	}
 }
 
@@ -63,7 +59,6 @@ func NewLogger() (*zap.Logger, error) {
 	format := config.AppConfig.Zap.Format
 	stackTraceKey := config.AppConfig.Zap.StackTraceKey
 	encodeLevel := config.AppConfig.Zap.EncodeLevel
-	prefix := config.AppConfig.Zap.Prefix
 	logInConsole := config.AppConfig.Zap.LoginConsole
 	showLine := config.AppConfig.Zap.ShowLine
 
@@ -75,53 +70,51 @@ func NewLogger() (*zap.Logger, error) {
 		}
 	}
 
-	cores := make([]zapcore.Core, 0, 7)
-	for zLevel := getLevel(level); zLevel <= zapcore.FatalLevel; zLevel++ {
+	// 获取当前日期，用于日志文件命名
+	date := time.Now().Format("2006-01-02")
+	logFileName := path.Join(director, fmt.Sprintf("%s.log", date))
 
-		var (
-			writer  zapcore.WriteSyncer
-			eConfig zapcore.EncoderConfig
-		)
-
-		// 使用 Lumberjack 进行日志轮转
-		lumberjackWriter := &lumberjack.Logger{
-			Filename:   path.Join(director, zLevel.String()+".log"),
-			MaxSize:    maxSize,    // MB
-			MaxBackups: maxBackups, // 保留的最大备份数量
-			MaxAge:     maxAge,     // 天
-			Compress:   true,       // 是否压缩备份
-		}
-
-		if logInConsole {
-			writer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberjackWriter))
-		} else {
-			writer = zapcore.AddSync(lumberjackWriter)
-		}
-
-		eConfig = zapcore.EncoderConfig{
-			MessageKey:    "message",
-			LevelKey:      "level",
-			TimeKey:       "time",
-			NameKey:       "logger",
-			CallerKey:     "caller",
-			StacktraceKey: stackTraceKey,
-			LineEnding:    zapcore.DefaultLineEnding,
-			EncodeLevel:   levelEncoder(encodeLevel),
-			EncodeTime: func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
-				encoder.AppendString(t.Format(prefix + "2006/01/02 - 15:04:05.000"))
-			},
-			EncodeDuration: zapcore.SecondsDurationEncoder,
-			EncodeCaller:   zapcore.FullCallerEncoder,
-		}
-
-		if format == "json" {
-			cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(eConfig), writer, levelPriority(zLevel)))
-		} else {
-			cores = append(cores, zapcore.NewCore(zapcore.NewConsoleEncoder(eConfig), writer, levelPriority(zLevel)))
-		}
+	// 使用 Lumberjack 进行日志轮转
+	lumberjackWriter := &lumberjack.Logger{
+		Filename:   logFileName,
+		MaxSize:    maxSize,    // MB
+		MaxBackups: maxBackups, // 保留的最大备份数量
+		MaxAge:     maxAge,     // 天
+		Compress:   true,       // 是否压缩备份
+	}
+	// 创建输出到控制台的 WriteSyncer
+	var writer zapcore.WriteSyncer
+	if logInConsole {
+		writer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberjackWriter))
+	} else {
+		writer = zapcore.AddSync(lumberjackWriter)
 	}
 
-	log := zap.New(zapcore.NewTee(cores...))
+	eConfig := zapcore.EncoderConfig{
+		MessageKey:    "message",
+		LevelKey:      "level",
+		TimeKey:       "time",
+		NameKey:       "logger",
+		CallerKey:     "caller",
+		StacktraceKey: stackTraceKey,
+		LineEnding:    zapcore.DefaultLineEnding,
+		EncodeLevel:   levelEncoder(encodeLevel),
+		EncodeTime: func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+			encoder.AppendString(t.Format("2006/01/02 - 15:04:05.000"))
+		},
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.FullCallerEncoder,
+	}
+
+	// 创建核心
+	var core zapcore.Core
+	if format == "json" {
+		core = zapcore.NewCore(zapcore.NewJSONEncoder(eConfig), writer, levelPriority(getLevel(level)))
+	} else {
+		core = zapcore.NewCore(zapcore.NewConsoleEncoder(eConfig), writer, levelPriority(getLevel(level)))
+	}
+
+	log := zap.New(core)
 	if showLine {
 		log = log.WithOptions(zap.AddCaller())
 	}
@@ -138,7 +131,7 @@ func getLevel(level string) zapcore.Level {
 	case "warn":
 		return zapcore.WarnLevel
 	case "error":
-		return zapcore.WarnLevel
+		return zapcore.ErrorLevel
 	case "dpanic":
 		return zapcore.DPanicLevel
 	case "panic":
@@ -166,38 +159,7 @@ func levelEncoder(encode string) zapcore.LevelEncoder {
 }
 
 func levelPriority(level zapcore.Level) zap.LevelEnablerFunc {
-	switch level {
-	case zapcore.DebugLevel:
-		return func(level zapcore.Level) bool { // 调试级别
-			return level == zap.DebugLevel
-		}
-	case zapcore.InfoLevel:
-		return func(level zapcore.Level) bool { // 日志级别
-			return level == zap.InfoLevel
-		}
-	case zapcore.WarnLevel:
-		return func(level zapcore.Level) bool { // 警告级别
-			return level == zap.WarnLevel
-		}
-	case zapcore.ErrorLevel:
-		return func(level zapcore.Level) bool { // 错误级别
-			return level == zap.ErrorLevel
-		}
-	case zapcore.DPanicLevel:
-		return func(level zapcore.Level) bool { // dpanic级别
-			return level == zap.DPanicLevel
-		}
-	case zapcore.PanicLevel:
-		return func(level zapcore.Level) bool { // panic级别
-			return level == zap.PanicLevel
-		}
-	case zapcore.FatalLevel:
-		return func(level zapcore.Level) bool { // 终止级别
-			return level == zap.FatalLevel
-		}
-	default:
-		return func(level zapcore.Level) bool { // 调试级别
-			return level == zap.DebugLevel
-		}
+	return func(l zapcore.Level) bool {
+		return l >= level
 	}
 }

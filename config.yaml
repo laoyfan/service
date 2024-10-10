@@ -25,6 +25,5 @@ zap:
   format: console
   stackTraceKey: console
   encodeLevel: LowercaseLevelEncoder
-  prefix:
   logInConsole: true
   showLine: true

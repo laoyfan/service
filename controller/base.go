@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"service/constant"
 	"service/logger"
+	"service/model"
 	"service/translator"
 	"strings"
 
@@ -14,20 +15,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Response 响应体
-type Response struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
-}
-
 // Controller 基础控制器
-// 此处封装请求响应
 type Controller struct{}
 
 // Result 基础封装
-func (c *Controller) Result(r *gin.Context, code int, msg string, data interface{}) {
-	r.JSON(http.StatusOK, Response{
+func (c *Controller) Result(ctx *gin.Context, code int, msg string, data interface{}) {
+	ctx.JSON(http.StatusOK, model.Response{
 		Code: code,
 		Msg:  msg,
 		Data: data,
@@ -35,31 +28,31 @@ func (c *Controller) Result(r *gin.Context, code int, msg string, data interface
 }
 
 // Success 成功响应
-func (c *Controller) Success(r *gin.Context, data interface{}) {
-	c.Result(r, constant.SUCCESS, "请求成功", data)
+func (c *Controller) Success(ctx *gin.Context, data interface{}) {
+	c.Result(ctx, constant.SUCCESS, "请求成功", data)
 }
 
 // Error 失败响应
-func (c *Controller) Error(r *gin.Context, msg string, data interface{}) {
-	c.Result(r, constant.ERROR, msg, data)
+func (c *Controller) Error(ctx *gin.Context, msg string, data interface{}) {
+	c.Result(ctx, constant.ERROR, msg, data)
 }
 
 // Valid 参数校验
-func (c *Controller) Valid(r *gin.Context, valid interface{}) error {
-	if err := r.ShouldBind(valid); err != nil {
+func (c *Controller) Valid(ctx *gin.Context, valid interface{}) error {
+	if err := ctx.ShouldBind(valid); err != nil {
 		var errs validator.ValidationErrors
 		if errors.As(err, &errs) {
-			logger.Error(r.Request.Context(), "参数检验失败",
-				zap.String("url", r.Request.URL.Path),
+			logger.Error(ctx, "参数检验失败",
+				zap.String("url", ctx.Request.URL.Path),
 				zap.Any("validationErrors", errs.Translate(translator.Trans)),
 			)
-			c.Result(r, constant.VALID, "请求参数校验失败", c.removeTopStruct(errs.Translate(translator.Trans)))
+			c.Result(ctx, constant.VALID, "请求参数校验失败", c.removeTopStruct(errs.Translate(translator.Trans)))
 		} else {
-			logger.Error(r.Request.Context(), "请求解析失败",
-				zap.String("url", r.Request.URL.Path),
+			logger.Error(ctx, "请求解析失败",
+				zap.String("url", ctx.Request.URL.Path),
 				zap.Any("error", err),
 			)
-			c.Result(r, http.StatusBadRequest, err.Error(), nil)
+			c.Result(ctx, http.StatusBadRequest, err.Error(), nil)
 		}
 		return err
 	}

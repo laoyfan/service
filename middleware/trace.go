@@ -6,9 +6,9 @@ import (
 )
 
 func Trace() gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		traceID := uuid.New().String()
-		c.Set("TraceID", traceID)
-		c.Next()
+		ctx.Set("TraceID", traceID)
+		ctx.Next()
 	}
 }

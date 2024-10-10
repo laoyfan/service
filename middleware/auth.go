@@ -8,16 +8,16 @@ import (
 )
 
 func Auth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		clientID := c.Request.Header.Get("clientId")
+	return func(ctx *gin.Context) {
+		clientID := ctx.Request.Header.Get("clientId")
 		if clientID != "tC0ND8ar26Jk9L5b" {
-			c.JSON(http.StatusForbidden, gin.H{
+			ctx.JSON(http.StatusForbidden, gin.H{
 				"code": constant.FORBIDDEN,
 				"msg":  "无权限",
 			})
-			c.Abort()
+			ctx.Abort()
 			return
 		}
-		c.Next()
+		ctx.Next()
 	}
 }

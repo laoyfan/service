@@ -24,35 +24,35 @@ type LogLayout struct {
 
 // Logger 返回一个 Gin 日志中间件
 func Logger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()             // 记录请求开始时间
-		path := c.Request.URL.Path      // 记录请求路径
-		query := c.Request.URL.RawQuery // 记录请求Query参数
+	return func(ctx *gin.Context) {
+		start := time.Now()               // 记录请求开始时间
+		path := ctx.Request.URL.Path      // 记录请求路径
+		query := ctx.Request.URL.RawQuery // 记录请求Query参数
 
-		c.Next()
+		ctx.Next()
 
 		cost := time.Since(start)
-		status := c.Writer.Status()
+		status := ctx.Writer.Status()
 
 		// 构造日志信息
 		layout := LogLayout{
 			Time:      start,
 			Status:    status,
-			Method:    c.Request.Method,
+			Method:    ctx.Request.Method,
 			Path:      path,
 			Query:     query,
-			IP:        c.ClientIP(),
-			UserAgent: c.Request.UserAgent(),
-			Error:     c.Errors.ByType(gin.ErrorTypePrivate).String(),
+			IP:        ctx.ClientIP(),
+			UserAgent: ctx.Request.UserAgent(),
+			Error:     ctx.Errors.ByType(gin.ErrorTypePrivate).String(),
 			Cost:      cost.Seconds(),
-			Source:    c.Request.Host,
+			Source:    ctx.Request.Host,
 		}
 
 		// 根据响应状态码决定记录日志级别
 		if status >= 400 {
-			logger.Error(c.Request.Context(), "请求错误", zap.Any("log", layout))
+			logger.Error(ctx, "请求错误", zap.Any("log", layout))
 		} else {
-			logger.Info(c.Request.Context(), "请求成功", zap.Any("log", layout))
+			logger.Info(ctx, "请求成功", zap.Any("log", layout))
 		}
 	}
 }

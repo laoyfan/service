@@ -16,8 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -95,6 +93,7 @@ func initModules() error {
 // 设置中间件
 func setupMiddleware(r *gin.Engine) {
 	r.Use(
+		middleware.Trace(),
 		middleware.Cors(),    // 跨域处理
 		middleware.Limiter(), // 限流处理
 		middleware.Logger(),  // 日志处理
@@ -105,8 +104,8 @@ func setupMiddleware(r *gin.Engine) {
 // 创建包含 Trace ID 的上下文
 func createContextWithTraceID() (context.Context, context.CancelFunc) {
 	baseCtx := context.Background()
-	traceID := uuid.New().String()
-	ctx := context.WithValue(baseCtx, uuid.New().String(), traceID)
+	traceID := fmt.Sprintf("main:date(%s)", time.Now().Format("2006-01-02 15:04:05"))
+	ctx := context.WithValue(baseCtx, "TraceID", traceID)
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	return ctx, cancel
 }

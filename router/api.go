@@ -11,7 +11,7 @@ import (
 // Api api
 func Api(r *gin.Engine) {
 
-	api := r.Group("/api", middleware.Auth(), middleware.Trace())
+	api := r.Group("/api", middleware.Auth())
 
 	// 实例化控制器
 	indexController := controller.NewIndexController(service.NewIndexService())
