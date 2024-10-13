@@ -23,8 +23,8 @@ func InitRedis() error {
 			client := redis.NewClient(&redis.Options{
 				Addr:         fmt.Sprintf("%s:%d", instance.Addr, instance.Port),
 				Password:     instance.Password,
-				DB:           db,
-				PoolSize:     100,
+				DB:           db.DB,
+				PoolSize:     db.PoolSize,
 				MinIdleConns: 10,
 
 				DialTimeout:  10 * time.Second,
@@ -41,9 +41,9 @@ func InitRedis() error {
 				},
 			})
 			if err := client.Ping(context.Background()).Err(); err != nil {
-				return fmt.Errorf("无法连接到 Redis instance %s, db %d: %w", instance.Name, db, err)
+				return fmt.Errorf("无法连接到 Redis instance %s, db %d: %w", instance.Name, db.DB, err)
 			}
-			key := fmt.Sprintf("%s_%d", instance.Name, db)
+			key := fmt.Sprintf("%s_%d", instance.Name, db.DB)
 			redisClients.Store(key, client)
 		}
 	}

@@ -15,7 +15,28 @@ redis:
       addr: 127.0.0.1
       port: 6379
       password: ""
-      dbs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      dbs:
+        - db: 0
+          pool_size: 50
+        - db: 1
+          pool_size: 30
+        - db: 2
+          pool_size: 20
+        - db: 3
+          pool_size: 10
+        - db: 4
+          pool_size: 5
+        - db: 5
+          pool_size: 5
+        - db: 6
+          pool_size: 5
+        - db: 7
+          pool_size: 5
+        - db: 8
+          pool_size: 5
+        - db: 9
+          pool_size: 5
+
 zap:
   director: log
   level: info

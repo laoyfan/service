@@ -18,11 +18,16 @@ type Cors struct {
 }
 
 type RedisInstanceConfig struct {
-	Name     string `yaml:"name"`     // 实例名称
-	Addr     string `yaml:"addr"`     // 地址
-	Port     int    `yaml:"port"`     // 端口
-	Password string `yaml:"password"` // 密码
-	DBs      []int  `yaml:"dbs"`      // 数据库
+	Name     string     `yaml:"name"`     // 实例名称
+	Addr     string     `yaml:"addr"`     // 地址
+	Port     int        `yaml:"port"`     // 端口
+	Password string     `yaml:"password"` // 密码
+	DBs      []DBConfig `yaml:"dbs"`      // 数据库
+}
+
+type DBConfig struct {
+	DB       int `yaml:"db"`
+	PoolSize int `yaml:"pool_size"`
 }
 
 type Zap struct {
