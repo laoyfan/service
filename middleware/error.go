@@ -16,7 +16,7 @@ import (
 
 // Error 中间件处理异常捕获
 func Error() gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				var brokenPipe bool
@@ -29,43 +29,44 @@ func Error() gin.HandlerFunc {
 				}
 
 				// 获取请求信息
-				httpRequest, _ := httputil.DumpRequest(c.Request, false)
+				httpRequest, _ := httputil.DumpRequest(ctx.Request, false)
 
 				// 处理断开连接情况
 				if brokenPipe {
-					logger.Error(c.Request.Context(),
+					logger.Error(ctx,
 						"请求连接断开",
-						zap.String("url", c.Request.URL.Path),
+						zap.String("url", ctx.Request.URL.Path),
 						zap.Any("error", err),
 						zap.String("request", string(httpRequest)),
 					)
-					c.JSON(http.StatusOK, gin.H{
+					ctx.JSON(http.StatusOK, gin.H{
 						"code": constant.ERROR,
 						"msg":  "异常，请稍后重试",
 					})
-					c.Abort()
+					ctx.Abort()
 					return
 				}
 
 				// 记录异常日志和堆栈信息
-				logger.Error(c.Request.Context(),
+				logger.Error(ctx,
 					"异常捕获",
+					zap.String("type", "server_error"),
 					zap.Any("error", err),
 					zap.String("request", strings.ReplaceAll(string(httpRequest), "\r\n", " ")),
 					zap.Strings("stack", formatStackTrace()),
 				)
 
 				// 返回服务器内部错误响应
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 					"code": constant.ERROR,
 					"msg":  "服务器开小差，请稍后重试",
 				})
-				c.Abort()
+				ctx.Abort()
 			}
 		}()
 
 		// 继续处理请求
-		c.Next()
+		ctx.Next()
 	}
 }
 
@@ -78,7 +79,7 @@ func formatStackTrace() []string {
 			continue // 跳过 goroutine 信息
 		}
 		trimmedLine := strings.TrimSpace(line)
-		if len(trimmedLine) > 0 && strings.Contains(trimmedLine, "cpc-service-go") {
+		if len(trimmedLine) > 0 && strings.Contains(trimmedLine, "service") {
 			formattedStack = append(formattedStack, trimmedLine)
 		}
 	}

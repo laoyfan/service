@@ -66,14 +66,12 @@ func Close(ctx context.Context) {
 			go func(key interface{}, client *redis.Client) {
 				defer wg.Done()
 				if err := client.Close(); err != nil {
-					logger.Error(
-						ctx,
+					logger.Error(ctx,
 						"关闭失败 Redis client",
 						zap.Any("key", key),
 						zap.Error(err))
 				} else {
-					logger.Info(
-						ctx,
+					logger.Info(ctx,
 						"关闭成功 Redis client",
 						zap.Any("key", key))
 				}

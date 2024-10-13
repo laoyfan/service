@@ -9,6 +9,13 @@ import (
 
 // Cors 中间件处理跨域请求
 func Cors() gin.HandlerFunc {
+	once.Do(func() {
+		allowedOriginsMap = make(map[string]struct{}, len(config.AppConfig.Cors.AllowOrigins))
+		for _, origin := range config.AppConfig.Cors.AllowOrigins {
+			allowedOriginsMap[origin] = struct{}{}
+		}
+	})
+
 	return func(ctx *gin.Context) {
 		// 设置跨域响应头
 		setHeaders(ctx)
@@ -53,10 +60,6 @@ func setHeaders(ctx *gin.Context) {
 // allowOrigins 校验请求的来源是否在允许的列表中
 func allowOrigins(ctx *gin.Context) bool {
 	origin := ctx.GetHeader("Origin")
-	for _, allowedOrigin := range config.AppConfig.Cors.AllowOrigins {
-		if origin == allowedOrigin {
-			return true
-		}
-	}
-	return false
+	_, exists := allowedOriginsMap[origin]
+	return exists
 }
