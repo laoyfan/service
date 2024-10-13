@@ -4,12 +4,20 @@ import (
 	"net/http"
 	"service/config"
 	"service/logger"
+	"sync"
 	"time"
+
+	"github.com/didip/tollbooth/limiter"
 
 	"go.uber.org/zap"
 
 	"github.com/didip/tollbooth"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	once  sync.Once
+	limit *limiter.Limiter
 )
 
 // InitLimiter 初始化限流器

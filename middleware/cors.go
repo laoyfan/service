@@ -7,18 +7,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var allowedOriginsMap map[string]struct{}
+
+func InitAllowedOrigins(origins []string) {
+	allowedOriginsMap = make(map[string]struct{}, len(origins))
+	for _, origin := range origins {
+		allowedOriginsMap[origin] = struct{}{}
+	}
+}
+
 // Cors 中间件处理跨域请求
 func Cors() gin.HandlerFunc {
-	once.Do(func() {
-		allowedOriginsMap = make(map[string]struct{}, len(config.AppConfig.Cors.AllowOrigins))
-		for _, origin := range config.AppConfig.Cors.AllowOrigins {
-			allowedOriginsMap[origin] = struct{}{}
-		}
-	})
-
 	return func(ctx *gin.Context) {
 		// 设置跨域响应头
 		setHeaders(ctx)
+
+		// OPTIONS 方法直接返回
+		if ctx.Request.Method == http.MethodOptions {
+			ctx.AbortWithStatus(http.StatusNoContent)
+			return
+		}
 
 		// 调试模式下放行所有请求
 		if config.AppConfig.Debug == "debug" {
@@ -33,12 +41,6 @@ func Cors() gin.HandlerFunc {
 				"msg":  "校验跨域失败",
 			})
 			ctx.Abort()
-			return
-		}
-
-		// OPTIONS 方法直接返回
-		if ctx.Request.Method == http.MethodOptions {
-			ctx.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
