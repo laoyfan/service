@@ -60,9 +60,11 @@ func (c *Controller) Valid(ctx *gin.Context, valid interface{}) error {
 }
 
 func (c *Controller) removeTopStruct(fields map[string]string) map[string]string {
-	res := map[string]string{}
+	res := make(map[string]string, len(fields))
 	for field, err := range fields {
-		res[field[strings.Index(field, ".")+1:]] = err
+		if idx := strings.Index(field, "."); idx != -1 {
+			res[field[idx+1:]] = err
+		}
 	}
 	return res
 }
