@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"service/logger"
 	"time"
 
@@ -48,11 +49,12 @@ func Logger() gin.HandlerFunc {
 			Source:    ctx.Request.Host,
 		}
 
+		msg := fmt.Sprintf("%d %v %s %s", status, cost.Milliseconds(), layout.Method, layout.Path)
 		// 根据响应状态码决定记录日志级别
 		if status >= 400 {
-			logger.Error(ctx, "请求错误", zap.Any("log", layout))
+			logger.Error(ctx, msg, zap.Any("log", layout))
 		} else {
-			logger.Info(ctx, "请求成功", zap.Any("log", layout))
+			logger.Info(ctx, msg, zap.Any("log", layout))
 		}
 	}
 }

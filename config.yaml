@@ -1,14 +1,15 @@
-debug: release # gin release模式与debug模式切换
+debug: debug # gin release模式与debug模式切换
 port: 8080
 limit: 10
-cors:
-  allowOrigins:
-    - http://127.0.0.1:8080
-  allowMethods: POST,GET,OPTIONS,DELETE,PUT
-  allowHeaders: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id
-  exposeHeaders: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At
-  allowCredentials: "true"
-  maxAge: 43200
+allowOrigins:
+  - http://127.0.0.1:8080
+zap:
+  director: log
+  level: info
+  maxAge: 2
+  maxSize: 1
+  maxBackups: 1
+  format: console
 redis:
   instances:
     - name: default
@@ -36,15 +37,3 @@ redis:
           pool_size: 5
         - db: 9
           pool_size: 5
-
-zap:
-  director: log
-  level: info
-  maxAge: 3
-  maxSize: 100
-  maxBackups: 1
-  format: console
-  stackTraceKey: console
-  encodeLevel: LowercaseLevelEncoder
-  logInConsole: true
-  showLine: true

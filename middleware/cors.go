@@ -52,11 +52,11 @@ func Cors() gin.HandlerFunc {
 // setHeaders 设置允许跨域请求的响应头
 func setHeaders(ctx *gin.Context) {
 	ctx.Header("Access-Control-Allow-Origin", ctx.GetHeader("Origin"))
-	ctx.Header("Access-Control-Allow-Methods", config.AppConfig.Cors.AllowMethods)
-	ctx.Header("Access-Control-Allow-Headers", config.AppConfig.Cors.AllowHeaders)
-	ctx.Header("Access-Control-Expose-Headers", config.AppConfig.Cors.ExposeHeaders)
-	ctx.Header("Access-Control-Allow-Credentials", config.AppConfig.Cors.AllowCredentials)
-	ctx.Header("Access-Control-Max-Age", config.AppConfig.Cors.MaxAge)
+	ctx.Header("Access-Control-Allow-Methods", "POST,GET,OPTIONS,DELETE,PUT")
+	ctx.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id")
+	ctx.Header("Access-Control-Expose-Headers", "Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At")
+	ctx.Header("Access-Control-Allow-Credentials", "true")
+	ctx.Header("Access-Control-Max-Age", "86400")
 }
 
 // allowOrigins 校验请求的来源是否在允许的列表中

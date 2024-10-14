@@ -35,28 +35,30 @@ func InitLogger() error {
 
 // NewLogger 创建新的日志器实例
 func NewLogger() (*zap.Logger, error) {
-	logConfig := config.AppConfig.Zap
-	if err := ensureLogDirectoryExists(logConfig.Director); err != nil {
+	// 创建日志目录
+	if err := ensureLogDirectoryExists(config.AppConfig.Zap.Director); err != nil {
 		return nil, err
 	}
-
-	writer := getLogWriter(logConfig.Director, logConfig.MaxSize, logConfig.MaxBackups, logConfig.MaxAge)
-	if logConfig.LoginConsole {
+	// 设置日志级别
+	writer := getLogWriter(config.AppConfig.Zap.Director, config.AppConfig.Zap.MaxSize, config.AppConfig.Zap.MaxBackups, config.AppConfig.Zap.MaxAge)
+	// debug模式输出控制台
+	if config.AppConfig.Debug == "debug" {
 		writer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), writer)
 	}
-
-	encoderConfig := getEncoderConfig(logConfig.StackTraceKey, logConfig.EncodeLevel)
+	// 创建编码器配置
+	encoderConfig := getEncoderConfig()
 	var core zapcore.Core
-	if logConfig.Format == "json" {
-		core = zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), writer, levelPriority(getLevel(logConfig.Level)))
+	if config.AppConfig.Zap.Format == "json" {
+		// 如果是JSON格式则使用JSONEncoder
+		core = zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), writer, levelPriority(getLevel(config.AppConfig.Zap.Level)))
 	} else {
-		core = zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), writer, levelPriority(getLevel(logConfig.Level)))
+		// 如果是Console格式则使用ConsoleEncoder
+		core = zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), writer, levelPriority(getLevel(config.AppConfig.Zap.Level)))
 	}
 
 	log := zap.New(core)
-	if logConfig.ShowLine {
-		log = log.WithOptions(zap.AddCaller())
-	}
+	log = log.WithOptions(zap.AddCaller())
+
 	return log, nil
 }
 
@@ -112,18 +114,18 @@ func getLogWriter(director string, maxSize, maxBackups, maxAge int) zapcore.Writ
 }
 
 // 获取编码配置
-func getEncoderConfig(stackTraceKey, encodeLevel string) zapcore.EncoderConfig {
+func getEncoderConfig() zapcore.EncoderConfig {
 	return zapcore.EncoderConfig{
 		MessageKey:    "message",
 		LevelKey:      "level",
 		TimeKey:       "time",
 		NameKey:       "logger",
 		CallerKey:     "caller",
-		StacktraceKey: stackTraceKey,
+		StacktraceKey: "stacktrace",
 		LineEnding:    zapcore.DefaultLineEnding,
-		EncodeLevel:   levelEncoder(encodeLevel),
+		EncodeLevel:   zapcore.CapitalLevelEncoder,
 		EncodeTime: func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
-			encoder.AppendString(t.Format("2006/01/02 - 15:04:05.000"))
+			encoder.AppendString(t.Format("2006-01-02 15:04:05"))
 		},
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.FullCallerEncoder,
@@ -152,18 +154,4 @@ func levelPriority(level zapcore.Level) zap.LevelEnablerFunc {
 	return func(l zapcore.Level) bool {
 		return l >= level
 	}
-}
-
-// 日志级别编码器
-func levelEncoder(encode string) zapcore.LevelEncoder {
-	encoderMap := map[string]zapcore.LevelEncoder{
-		"LowercaseLevelEncoder":      zapcore.LowercaseLevelEncoder,
-		"LowercaseColorLevelEncoder": zapcore.LowercaseColorLevelEncoder,
-		"CapitalLevelEncoder":        zapcore.CapitalLevelEncoder,
-		"CapitalColorLevelEncoder":   zapcore.CapitalColorLevelEncoder,
-	}
-	if encoder, ok := encoderMap[encode]; ok {
-		return encoder
-	}
-	return zapcore.LowercaseLevelEncoder
 }

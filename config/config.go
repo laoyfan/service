@@ -7,16 +7,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Cors 跨域配置
-type Cors struct {
-	AllowOrigins     []string `yaml:"allowOrigins"`     // 允许跨域origin
-	AllowMethods     string   `yaml:"allowMethods"`     // 方法
-	AllowHeaders     string   `yaml:"allowHeaders"`     // 请求头
-	ExposeHeaders    string   `yaml:"exposeHeaders"`    // 响应头
-	AllowCredentials string   `yaml:"allowCredentials"` // 是否允许发送cookie
-	MaxAge           string   `yaml:"maxAge"`           // 预检间隔
-}
-
 type RedisInstanceConfig struct {
 	Name     string     `yaml:"name"`     // 实例名称
 	Addr     string     `yaml:"addr"`     // 地址
@@ -31,25 +21,20 @@ type DBConfig struct {
 }
 
 type Zap struct {
-	Director      string // 日志文件夹
-	Level         string // 日志级别
-	MaxAge        int    // 日志保存天数
-	MaxSize       int    // 日志大小(MB)
-	MaxBackups    int    // 日志备份数量
-	Format        string // 输出日志格式
-	StackTraceKey string // 错误堆栈key
-	EncodeLevel   string // 编码级别
-	Prefix        string // 日志前缀
-	LoginConsole  bool   // 是否输出日志到控制台
-	ShowLine      bool   // 是否显示行号
+	Director   string // 日志文件夹
+	Level      string // 日志级别
+	MaxAge     int    // 日志保存天数
+	MaxSize    int    // 日志大小(MB)
+	MaxBackups int    // 日志备份数量
+	Format     string // 输出日志格式
 }
 
 type Config struct {
-	Debug string   // 调试模式
-	Port  int      // 端口
-	Limit float64  // 限流
-	Cors  Cors     // 跨域
-	Redis struct { // Redis配置
+	Debug        string   // 调试模式
+	Port         int      // 端口
+	Limit        float64  // 限流
+	AllowOrigins []string `yaml:"allowOrigins"` // 允许跨域origin
+	Redis        struct { // Redis配置
 		Instances []RedisInstanceConfig // Redis实例配置
 	}
 	Zap Zap // 日志

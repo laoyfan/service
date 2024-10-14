@@ -87,7 +87,7 @@ func initModules() error {
 	fmt.Println("翻译器初始化成功")
 	middleware.InitLimiter()
 	fmt.Println("限流器初始化成功")
-	middleware.InitAllowedOrigins(config.AppConfig.Cors.AllowOrigins)
+	middleware.InitAllowedOrigins(config.AppConfig.AllowOrigins)
 	fmt.Println("跨域初始化成功")
 	return nil
 }
