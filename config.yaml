@@ -42,7 +42,7 @@ zap:
   level: info
   maxAge: 3
   maxSize: 100
-  maxBackups: 3
+  maxBackups: 1
   format: console
   stackTraceKey: console
   encodeLevel: LowercaseLevelEncoder

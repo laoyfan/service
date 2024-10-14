@@ -95,7 +95,7 @@ func initModules() error {
 // 设置中间件
 func setupMiddleware(r *gin.Engine) {
 	r.Use(
-		middleware.Trace(),
+		middleware.Trace(),   // 跟踪
 		middleware.Cors(),    // 跨域处理
 		middleware.Limiter(), // 限流处理
 		middleware.Logger(),  // 日志处理
