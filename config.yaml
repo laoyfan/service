@@ -6,9 +6,9 @@ allowOrigins:
 zap:
   director: log
   level: info
-  maxAge: 2
-  maxSize: 1
-  maxBackups: 1
+  maxAge: 7
+  maxSize: 100
+  maxBackups: 10
   format: console
 redis:
   instances:

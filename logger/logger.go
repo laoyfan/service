@@ -103,7 +103,7 @@ func ensureLogDirectoryExists(director string) error {
 
 // 获取日志文件写入器
 func getLogWriter(director string, maxSize, maxBackups, maxAge int) zapcore.WriteSyncer {
-	logFileName := path.Join(director, time.Now().Format("2006-01-02")+".log")
+	logFileName := path.Join(director, "service.log")
 	return zapcore.AddSync(&lumberjack.Logger{
 		Filename:   logFileName,
 		MaxSize:    maxSize,
